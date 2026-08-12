@@ -40,13 +40,8 @@
   --brand-gray-8: #888b8d; /* cool gray 8 */
   --brand-gray-5: #b1b3b3; /* cool gray 5 */
   --brand-gray-2: #d0d0ce; /* cool gray 2 */
-  /* Dark cards: solid pms 289 with a soft depth edge (no bright sheen) */
-  --dark-card: linear-gradient(
-    180deg,
-    #0c2340 0%,
-    #0a1e38 55%,
-    #071628 100%
-  );
+  /* Dark cards: FAB Blue / pms 287 */
+  --dark-card: #003087;
 
   width: 1080px;
   height: 1920px;
