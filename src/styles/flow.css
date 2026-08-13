@@ -102,10 +102,12 @@
 }
 
 .flow-panel--single .osk-stage--inline {
-  flex: 1 1 auto;
-  min-height: 0;
+  flex: 0 0 auto;
   width: 100%;
-  justify-content: center;
+}
+
+.flow-panel--single .osk {
+  flex-shrink: 0;
 }
 
 .flow-panel--single .flow-submit-wrap {
@@ -377,7 +379,7 @@
 .osk-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   margin-bottom: 14px;
   padding: 0 6px;
@@ -391,8 +393,37 @@
   flex: 1;
 }
 
+.osk-body-slot {
+  width: 100%;
+  height: 440px;
+  min-height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
 .osk-body {
   width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.osk-alpha,
+.osk-tel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+}
+
+.osk-tel {
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 .osk-field {
@@ -449,13 +480,6 @@
 .osk-key:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.osk-alpha,
-.osk-tel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 .osk-row {

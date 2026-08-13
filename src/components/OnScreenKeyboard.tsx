@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
 export type KeyboardMode = "text" | "email" | "tel";
@@ -72,13 +72,6 @@ export default function OnScreenKeyboard({
     setShift(shouldCapitalize);
   }, [mode, fieldKey, value, symbols]);
 
-  const hint = useMemo(() => {
-    if (mode === "tel") return "Number pad";
-    if (symbols) return "Numbers & symbols";
-    if (mode === "email") return "Letters · tap 123 for numbers";
-    return shift ? "Uppercase" : "Lowercase";
-  }, [mode, shift, symbols]);
-
   function pressChar(char: string) {
     if (disabled) return;
     const valueOut =
@@ -141,19 +134,6 @@ export default function OnScreenKeyboard({
 
       <div className={`osk${shake ? " is-shake" : ""}`}>
         <div className="osk-top">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={fieldKey}
-              className="osk-meta"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.28, ease: easeOut }}
-            >
-              <span className="osk-field">{fieldLabel}</span>
-              <span className="osk-hint">{hint}</span>
-            </motion.div>
-          </AnimatePresence>
           <div className="osk-top-actions">
             <button
               type="button"
@@ -174,16 +154,17 @@ export default function OnScreenKeyboard({
           </div>
         </div>
 
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={`${mode}-${symbols ? "sym" : "alpha"}`}
-            className="osk-body"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.28, ease: easeOut }}
-          >
-            {mode === "tel" ? (
+        <div className="osk-body-slot">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={`${mode}-${symbols ? "sym" : "alpha"}`}
+              className="osk-body"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: easeOut }}
+            >
+              {mode === "tel" ? (
               <div className="osk-tel">
                 {TEL_KEYS.map((row) => (
                   <div className="osk-row" key={row.join("-")}>
@@ -317,8 +298,9 @@ export default function OnScreenKeyboard({
                 </div>
               </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </motion.div>
   );
