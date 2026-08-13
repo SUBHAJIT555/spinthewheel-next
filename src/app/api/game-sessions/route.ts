@@ -19,6 +19,17 @@ function json(body: ApiBody, status: number) {
  */
 export async function POST() {
   try {
+    if (!process.env.DATABASE_URL) {
+      console.error("[api/game-sessions] DATABASE_URL is missing on this deployment");
+      return json(
+        {
+          success: false,
+          message: "Unable to save your information. Please try again.",
+        },
+        500,
+      );
+    }
+
     const session = await createGameSession();
     return json(
       {
