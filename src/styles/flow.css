@@ -254,6 +254,15 @@
   color: #ff8f8f;
 }
 
+.flow-submit-error {
+  font-family: var(--medium), sans-serif;
+  font-size: 22px;
+  color: #ff8f8f;
+  text-align: center;
+  margin: 0;
+  padding: 4px 8px;
+}
+
 .flow-submit-wrap {
   width: 100%;
   margin-top: 8px;

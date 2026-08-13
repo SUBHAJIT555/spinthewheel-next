@@ -15,6 +15,8 @@ import {
 } from "@/lib/prizes";
 import type { FlowPhase } from "@/lib/flow";
 import {
+  claimGameSessionPrize,
+  createGameSession,
   submitParticipant,
   type ParticipantPayload,
 } from "@/lib/participants";
@@ -76,6 +78,8 @@ export default function SpinWheel() {
   const [hydrated, setHydrated] = useState(false);
   const [scale, setScale] = useState(1);
   const [formSession, setFormSession] = useState(0);
+  const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const totalRotation = useRef(0);
   const controls = useAnimationControls();
@@ -181,6 +185,8 @@ export default function SpinWheel() {
     }
     setPhase("game");
     setModalPrize("CX Day<br />Surprise");
+    setGameSessionId(null);
+    setSubmitError(null);
     setFormSession((n) => n + 1);
     totalRotation.current = 0;
     void controls.set({ rotate: 0 });
@@ -189,6 +195,15 @@ export default function SpinWheel() {
   const handleSpin = useCallback(async () => {
     if (spinning || phase !== "game") return;
     setSpinning(true);
+    setSubmitError(null);
+
+    const sessionResult = await createGameSession();
+    if (!sessionResult.ok) {
+      setSpinning(false);
+      setSubmitError(sessionResult.message);
+      return;
+    }
+    setGameSessionId(sessionResult.gameSessionId);
 
     const randomSpin = Math.floor(Math.random() * 360) + 3700;
     totalRotation.current += randomSpin;
@@ -219,6 +234,14 @@ export default function SpinWheel() {
     stopSpinSound();
     playResultSound(selectedPrize !== BETTER_LUCK);
 
+    const claim = await claimGameSessionPrize(
+      sessionResult.gameSessionId,
+      selectedPrize,
+    );
+    if (!claim.ok) {
+      console.error("[spin] failed to lock prize on session", claim.message);
+    }
+
     const limit = PRIZE_LIMITS[selectedPrize as keyof typeof PRIZE_LIMITS];
     if (limit) {
       const count = getWinCount(limit.key) + 1;
@@ -245,25 +268,46 @@ export default function SpinWheel() {
     stopSpinSound,
   ]);
 
-  const handleOpenForm = useCallback(() => {
+  const handleOpenForm = useCallback(async () => {
+    setSubmitError(null);
+    if (gameSessionId) {
+      const claim = await claimGameSessionPrize(gameSessionId, modalPrize);
+      if (!claim.ok && claim.message) {
+        // Already assigned is fine; other failures surface on submit.
+        console.warn("[form] prize claim retry:", claim.message);
+      }
+    }
     setPhase("form");
-  }, []);
+  }, [gameSessionId, modalPrize]);
 
   const handleParticipantSubmit = useCallback(
     async (data: ParticipantPayload) => {
-      setPhase("submitting");
-      try {
-        await submitParticipant(data);
-        setPhase("success");
-        successTimerRef.current = setTimeout(() => {
-          returnToGame();
-        }, SUCCESS_HOLD_MS);
-      } catch {
-        // Keep user on form if mock/API fails
+      if (!gameSessionId) {
+        setSubmitError("Unable to save your information. Please try again.");
         setPhase("form");
+        return;
       }
+
+      setSubmitError(null);
+      setPhase("submitting");
+
+      const result = await submitParticipant({
+        ...data,
+        gameSessionId,
+      });
+
+      if (!result.ok) {
+        setSubmitError(result.message);
+        setPhase("form");
+        return;
+      }
+
+      setPhase("success");
+      successTimerRef.current = setTimeout(() => {
+        returnToGame();
+      }, SUCCESS_HOLD_MS);
     },
-    [returnToGame],
+    [gameSessionId, returnToGame],
   );
 
   const handleDevReset = useCallback(() => {
@@ -348,7 +392,9 @@ export default function SpinWheel() {
               >
                 <UserInfoForm
                   prizeHtml={modalPrize}
+                  gameSessionId={gameSessionId}
                   submitting={phase === "submitting"}
+                  submitError={submitError}
                   onSubmit={handleParticipantSubmit}
                 />
               </motion.section>
@@ -408,6 +454,12 @@ export default function SpinWheel() {
         >
           Reset
         </button>
+      )}
+
+      {phase === "game" && submitError && (
+        <p className="wheel-session-error" role="alert">
+          {submitError}
+        </p>
       )}
     </div>
   );

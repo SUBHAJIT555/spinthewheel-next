@@ -24,7 +24,9 @@ import { BETTER_LUCK } from "@/lib/prizes";
 
 type UserInfoFormProps = {
   prizeHtml: string;
+  gameSessionId: string | null;
   submitting: boolean;
+  submitError?: string | null;
   onSubmit: (data: ParticipantPayload) => void | Promise<void>;
 };
 
@@ -52,7 +54,9 @@ const FIELD_ORDER: FieldConfig[] = [
 
 export default function UserInfoForm({
   prizeHtml,
+  gameSessionId,
   submitting,
+  submitError = null,
   onSubmit,
 }: UserInfoFormProps) {
   const formId = useId();
@@ -151,10 +155,15 @@ export default function UserInfoForm({
       return;
     }
 
+    if (!gameSessionId) {
+      triggerShake();
+      return;
+    }
+
     await onSubmit({
       name: values.name.trim(),
       contactNumber: values.contactNumber.trim(),
-      prize: prizeHtml.replace(/<br\s*\/?>/gi, " "),
+      gameSessionId,
     });
   }
 
@@ -228,6 +237,12 @@ export default function UserInfoForm({
           noValidate
         >
           <div className="flow-field-row">{FIELD_ORDER.map(renderField)}</div>
+
+          {submitError && (
+            <p className="flow-submit-error" role="alert">
+              {submitError}
+            </p>
+          )}
 
           <OnScreenKeyboard
             mode={activeConfig.mode}

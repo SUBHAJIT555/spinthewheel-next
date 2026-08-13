@@ -1,3 +1,5 @@
+import { normalizeUaeMobile } from "@/lib/phone";
+
 export type FlowPhase = "game" | "reward" | "form" | "submitting" | "success";
 
 export type ParticipantFormValues = {
@@ -14,22 +16,28 @@ export const EMPTY_PARTICIPANT_FORM: ParticipantFormValues = {
   contactNumber: "",
 };
 
-const PHONE_RE = /^[+]?[\d\s()-]{7,20}$/;
+const NAME_MAX = 80;
 
 export function validateParticipantForm(
   values: ParticipantFormValues,
 ): ParticipantFormErrors {
   const errors: ParticipantFormErrors = {};
 
-  if (!values.name.trim()) {
+  const name = values.name.trim();
+  if (!name) {
     errors.name = "Name is required.";
+  } else if (name.length > NAME_MAX) {
+    errors.name = "Name is too long.";
   }
 
   const phone = values.contactNumber.trim();
   if (!phone) {
     errors.contactNumber = "Contact number is required.";
-  } else if (!PHONE_RE.test(phone) || phone.replace(/\D/g, "").length < 7) {
-    errors.contactNumber = "Enter a valid contact number.";
+  } else {
+    const normalized = normalizeUaeMobile(phone);
+    if (!normalized.ok) {
+      errors.contactNumber = "Enter a valid UAE mobile number.";
+    }
   }
 
   return errors;
