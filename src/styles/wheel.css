@@ -181,16 +181,19 @@
     rgba(208, 0, 0, 1) 78%
   );
   border-radius: 50%;
-  top: 59%;
-  left: 43%;
   position: absolute;
+  left: 50%;
+  top: 63%;
+  transform: translate(-50%, -50%);
   width: 150px;
   height: 150px;
-  text-align: center;
   border: 10px solid white;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
   z-index: 2100;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .wheel-touch button {
@@ -199,10 +202,12 @@
   font-family: var(--bold);
   font-size: 35px;
   border: none;
-  margin-top: 38px;
+  margin: 0;
+  padding: 0;
   cursor: pointer;
   width: 100%;
-  padding: 0;
+  height: 100%;
+  line-height: 1;
 }
 
 .wheel-touch button:disabled {
