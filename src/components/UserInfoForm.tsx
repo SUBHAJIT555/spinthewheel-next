@@ -287,11 +287,11 @@ export default function UserInfoForm({
         </form>
       </motion.div>
 
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {activeField && !submitting && (
           <OnScreenKeyboard
-            key={activeField}
             mode={activeConfig.mode}
+            fieldKey={activeField}
             fieldLabel={activeConfig.label}
             value={values[activeField]}
             shake={keyboardShake}

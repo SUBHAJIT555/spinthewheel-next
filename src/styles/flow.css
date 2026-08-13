@@ -244,6 +244,12 @@
   background: rgba(8, 18, 40, 0.95);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
   box-sizing: border-box;
+  overflow: hidden;
+  min-height: 108px;
+}
+
+.osk-preview-swap {
+  width: 100%;
 }
 
 .osk-preview-label {
@@ -319,6 +325,11 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
+}
+
+.osk-body {
+  width: 100%;
 }
 
 .osk-field {
