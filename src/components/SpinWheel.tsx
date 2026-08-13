@@ -84,6 +84,11 @@ export default function SpinWheel() {
   const totalRotation = useRef(0);
   const controls = useAnimationControls();
   const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionPromiseRef = useRef<ReturnType<typeof createGameSession> | null>(
+    null,
+  );
+  const claimPromiseRef = useRef<Promise<void> | null>(null);
+  const pendingPrizeRef = useRef<string | null>(null);
 
   const spinSoundRef = useRef<HTMLAudioElement | null>(null);
   const winSoundRef = useRef<HTMLAudioElement | null>(null);
@@ -183,6 +188,9 @@ export default function SpinWheel() {
       clearTimeout(successTimerRef.current);
       successTimerRef.current = null;
     }
+    sessionPromiseRef.current = null;
+    claimPromiseRef.current = null;
+    pendingPrizeRef.current = null;
     setPhase("game");
     setModalPrize("CX Day<br />Surprise");
     setGameSessionId(null);
@@ -192,18 +200,57 @@ export default function SpinWheel() {
     void controls.set({ rotate: 0 });
   }, [controls]);
 
+  /** Wait for session + prize lock without blocking the spin UI. */
+  const ensureSessionReady = useCallback(async (prizeHtml: string) => {
+    if (claimPromiseRef.current) {
+      await claimPromiseRef.current;
+    }
+
+    let sessionId = gameSessionId;
+
+    if (!sessionId && sessionPromiseRef.current) {
+      const created = await sessionPromiseRef.current;
+      if (created.ok) {
+        sessionId = created.gameSessionId;
+        setGameSessionId(created.gameSessionId);
+      } else {
+        return { ok: false as const, message: created.message };
+      }
+    }
+
+    if (!sessionId) {
+      return {
+        ok: false as const,
+        message: "Unable to save your information. Please try again.",
+      };
+    }
+
+    const claim = await claimGameSessionPrize(sessionId, prizeHtml);
+    if (!claim.ok) {
+      // Already locked from background claim is fine; submit will verify.
+      console.warn("[session] claim:", claim.message);
+    }
+
+    return { ok: true as const, gameSessionId: sessionId };
+  }, [gameSessionId]);
+
   const handleSpin = useCallback(async () => {
     if (spinning || phase !== "game") return;
     setSpinning(true);
     setSubmitError(null);
+    setGameSessionId(null);
+    pendingPrizeRef.current = null;
+    claimPromiseRef.current = null;
 
-    const sessionResult = await createGameSession();
-    if (!sessionResult.ok) {
-      setSpinning(false);
-      setSubmitError(sessionResult.message);
-      return;
-    }
-    setGameSessionId(sessionResult.gameSessionId);
+    // Start session in parallel — do not block the wheel
+    sessionPromiseRef.current = createGameSession().then((result) => {
+      if (result.ok) {
+        setGameSessionId(result.gameSessionId);
+      } else {
+        setSubmitError(result.message);
+      }
+      return result;
+    });
 
     const randomSpin = Math.floor(Math.random() * 360) + 3700;
     totalRotation.current += randomSpin;
@@ -230,18 +277,12 @@ export default function SpinWheel() {
     }
 
     const selectedPrize = prizes[prizeIndex] ?? BETTER_LUCK;
+    pendingPrizeRef.current = selectedPrize;
 
     stopSpinSound();
     playResultSound(selectedPrize !== BETTER_LUCK);
 
-    const claim = await claimGameSessionPrize(
-      sessionResult.gameSessionId,
-      selectedPrize,
-    );
-    if (!claim.ok) {
-      console.error("[spin] failed to lock prize on session", claim.message);
-    }
-
+    // Show result immediately — claim runs in the background
     const limit = PRIZE_LIMITS[selectedPrize as keyof typeof PRIZE_LIMITS];
     if (limit) {
       const count = getWinCount(limit.key) + 1;
@@ -257,6 +298,18 @@ export default function SpinWheel() {
     }
 
     setSpinning(false);
+
+    claimPromiseRef.current = (async () => {
+      const session = await sessionPromiseRef.current;
+      if (!session?.ok) return;
+      const claim = await claimGameSessionPrize(
+        session.gameSessionId,
+        selectedPrize,
+      );
+      if (!claim.ok) {
+        console.warn("[spin] background claim:", claim.message);
+      }
+    })();
   }, [
     controls,
     convertSlices,
@@ -268,32 +321,30 @@ export default function SpinWheel() {
     stopSpinSound,
   ]);
 
-  const handleOpenForm = useCallback(async () => {
+  const handleOpenForm = useCallback(() => {
     setSubmitError(null);
-    if (gameSessionId) {
-      const claim = await claimGameSessionPrize(gameSessionId, modalPrize);
-      if (!claim.ok && claim.message) {
-        // Already assigned is fine; other failures surface on submit.
-        console.warn("[form] prize claim retry:", claim.message);
-      }
-    }
     setPhase("form");
-  }, [gameSessionId, modalPrize]);
+    // Finish claim in background while user starts typing
+    const prize = pendingPrizeRef.current ?? modalPrize;
+    void ensureSessionReady(prize);
+  }, [ensureSessionReady, modalPrize]);
 
   const handleParticipantSubmit = useCallback(
     async (data: ParticipantPayload) => {
-      if (!gameSessionId) {
-        setSubmitError("Unable to save your information. Please try again.");
+      setSubmitError(null);
+      setPhase("submitting");
+
+      const prize = pendingPrizeRef.current ?? modalPrize;
+      const ready = await ensureSessionReady(prize);
+      if (!ready.ok) {
+        setSubmitError(ready.message);
         setPhase("form");
         return;
       }
 
-      setSubmitError(null);
-      setPhase("submitting");
-
       const result = await submitParticipant({
         ...data,
-        gameSessionId,
+        gameSessionId: ready.gameSessionId,
       });
 
       if (!result.ok) {
@@ -307,7 +358,7 @@ export default function SpinWheel() {
         returnToGame();
       }, SUCCESS_HOLD_MS);
     },
-    [gameSessionId, returnToGame],
+    [ensureSessionReady, modalPrize, returnToGame],
   );
 
   const handleDevReset = useCallback(() => {
