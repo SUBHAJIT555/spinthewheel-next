@@ -1,8 +1,6 @@
 export type ParticipantPayload = {
-  firstName: string;
-  lastName: string;
+  name: string;
   contactNumber: string;
-  email: string;
   prize?: string;
 };
 

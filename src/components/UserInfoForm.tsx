@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import BrandButton from "@/components/BrandButton";
 import OnScreenKeyboard, {
   type KeyboardMode,
@@ -37,28 +37,16 @@ type FieldConfig = {
 
 const FIELD_ORDER: FieldConfig[] = [
   {
-    key: "firstName",
-    label: "First Name",
-    placeholder: "Enter your first name",
-    mode: "text",
-  },
-  {
-    key: "lastName",
-    label: "Last Name",
-    placeholder: "Enter your last name",
+    key: "name",
+    label: "Name",
+    placeholder: "Enter your name",
     mode: "text",
   },
   {
     key: "contactNumber",
-    label: "Contact Number",
+    label: "Contact",
     placeholder: "Enter your contact number",
     mode: "tel",
-  },
-  {
-    key: "email",
-    label: "Email ID",
-    placeholder: "Enter your email address",
-    mode: "email",
   },
 ];
 
@@ -69,7 +57,6 @@ export default function UserInfoForm({
 }: UserInfoFormProps) {
   const formId = useId();
   const isWin = prizeHtml !== BETTER_LUCK;
-  const panelRef = useRef<HTMLDivElement | null>(null);
 
   const [values, setValues] = useState<ParticipantFormValues>(
     EMPTY_PARTICIPANT_FORM,
@@ -78,9 +65,8 @@ export default function UserInfoForm({
   const [touched, setTouched] = useState<
     Partial<Record<keyof ParticipantFormValues, boolean>>
   >({});
-  const [activeField, setActiveField] = useState<
-    keyof ParticipantFormValues | null
-  >("firstName");
+  const [activeField, setActiveField] =
+    useState<keyof ParticipantFormValues>("name");
 
   const [keyboardShake, setKeyboardShake] = useState(false);
   const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -89,14 +75,6 @@ export default function UserInfoForm({
     () => FIELD_ORDER.find((f) => f.key === activeField) ?? FIELD_ORDER[0],
     [activeField],
   );
-
-  useEffect(() => {
-    if (!activeField || !panelRef.current) return;
-    const el = panelRef.current.querySelector<HTMLElement>(
-      `[data-field="${activeField}"]`,
-    );
-    el?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [activeField]);
 
   useEffect(() => {
     return () => {
@@ -123,26 +101,21 @@ export default function UserInfoForm({
   }
 
   function appendToActive(chunk: string) {
-    if (!activeField || submitting) return;
+    if (submitting) return;
     updateField(activeField, `${values[activeField]}${chunk}`);
   }
 
   function backspaceActive() {
-    if (!activeField || submitting) return;
+    if (submitting) return;
     updateField(activeField, values[activeField].slice(0, -1));
   }
 
   function clearActive() {
-    if (!activeField || submitting) return;
+    if (submitting) return;
     updateField(activeField, "");
   }
 
   function goNextField() {
-    if (!activeField) {
-      setActiveField("firstName");
-      return;
-    }
-
     setTouched((prev) => ({ ...prev, [activeField]: true }));
     const nextErrors = validateParticipantForm(values);
     const fieldError = nextErrors[activeField];
@@ -157,9 +130,6 @@ export default function UserInfoForm({
     const next = FIELD_ORDER[index + 1];
     if (next) {
       setActiveField(next.key);
-    } else {
-      // Last field filled — return to form for Submit
-      setActiveField(null);
     }
   }
 
@@ -170,24 +140,20 @@ export default function UserInfoForm({
     const nextErrors = validateParticipantForm(values);
     setErrors(nextErrors);
     setTouched({
-      firstName: true,
-      lastName: true,
+      name: true,
       contactNumber: true,
-      email: true,
     });
 
     if (Object.keys(nextErrors).length > 0) {
       const firstInvalid = FIELD_ORDER.find((f) => nextErrors[f.key]);
       if (firstInvalid) setActiveField(firstInvalid.key);
+      triggerShake();
       return;
     }
 
-    setActiveField(null);
     await onSubmit({
-      firstName: values.firstName.trim(),
-      lastName: values.lastName.trim(),
+      name: values.name.trim(),
       contactNumber: values.contactNumber.trim(),
-      email: values.email.trim(),
       prize: prizeHtml.replace(/<br\s*\/?>/gi, " "),
     });
   }
@@ -232,19 +198,18 @@ export default function UserInfoForm({
   }
 
   return (
-    <div className={`flow-form-layout${activeField ? " is-typing" : ""}`}>
+    <div className="flow-form-layout flow-form-layout--single">
       <motion.div
-        ref={panelRef}
-        className="flow-panel"
-        initial={{ opacity: 0, scale: 0.92, y: 24 }}
+        className="flow-panel flow-panel--single"
+        initial={{ opacity: 0, scale: 0.94, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{
           opacity: 0,
-          scale: 0.94,
-          y: 16,
+          scale: 0.96,
+          y: 14,
           transition: { duration: 0.22, ease: [0.4, 0, 0.2, 1] },
         }}
-        transition={{ type: "spring", stiffness: 380, damping: 22, mass: 0.75 }}
+        transition={{ type: "spring", stiffness: 380, damping: 24, mass: 0.75 }}
       >
         <div className={`flow-result-banner${isWin ? " is-win" : " is-loss"}`}>
           <span className="flow-result-label">
@@ -256,23 +221,28 @@ export default function UserInfoForm({
           />
         </div>
 
-        <header className="flow-panel-header">
-          <h2 className="flow-panel-title">Your Details</h2>
-          <p className="flow-panel-subtitle">
-            Tap a field — the keyboard opens in the center for easy standing use
-          </p>
-        </header>
-
         <form
           id={formId}
           className="flow-form"
           onSubmit={handleSubmit}
           noValidate
         >
-          <div className="flow-field-row">
-            {FIELD_ORDER.slice(0, 2).map(renderField)}
-          </div>
-          {FIELD_ORDER.slice(2).map(renderField)}
+          <div className="flow-field-row">{FIELD_ORDER.map(renderField)}</div>
+
+          <OnScreenKeyboard
+            mode={activeConfig.mode}
+            fieldKey={activeField}
+            fieldLabel={activeConfig.label}
+            value={values[activeField]}
+            shake={keyboardShake}
+            showPreview={false}
+            disabled={submitting}
+            onKey={appendToActive}
+            onBackspace={backspaceActive}
+            onClear={clearActive}
+            onSpace={() => appendToActive(" ")}
+            onNext={goNextField}
+          />
 
           <div className="flow-submit-wrap">
             <BrandButton
@@ -286,24 +256,6 @@ export default function UserInfoForm({
           </div>
         </form>
       </motion.div>
-
-      <AnimatePresence mode="wait">
-        {activeField && !submitting && (
-          <OnScreenKeyboard
-            mode={activeConfig.mode}
-            fieldKey={activeField}
-            fieldLabel={activeConfig.label}
-            value={values[activeField]}
-            shake={keyboardShake}
-            disabled={submitting}
-            onKey={appendToActive}
-            onBackspace={backspaceActive}
-            onClear={clearActive}
-            onSpace={() => appendToActive(" ")}
-            onNext={goNextField}
-          />
-        )}
-      </AnimatePresence>
     </div>
   );
 }

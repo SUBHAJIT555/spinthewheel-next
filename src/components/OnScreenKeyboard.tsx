@@ -11,6 +11,7 @@ type OnScreenKeyboardProps = {
   fieldLabel: string;
   value: string;
   shake?: boolean;
+  showPreview?: boolean;
   disabled?: boolean;
   onKey: (key: string) => void;
   onBackspace: () => void;
@@ -49,6 +50,7 @@ export default function OnScreenKeyboard({
   fieldLabel,
   value,
   shake = false,
+  showPreview = true,
   disabled = false,
   onKey,
   onBackspace,
@@ -87,48 +89,43 @@ export default function OnScreenKeyboard({
 
   return (
     <motion.div
-      className="osk-stage"
-      initial={{ opacity: 0, y: 28, scale: 0.97 }}
+      className={`osk-stage${showPreview ? "" : " osk-stage--inline"}`}
       animate={
         shake
-          ? { opacity: 1, scale: 1, y: 0, x: [0, -14, 14, -10, 10, -6, 6, 0] }
-          : { opacity: 1, scale: 1, y: 0, x: 0 }
+          ? { x: [0, -14, 14, -10, 10, -6, 6, 0] }
+          : { x: 0 }
       }
-      exit={{
-        opacity: 0,
-        y: 20,
-        scale: 0.98,
-        transition: { duration: 0.28, ease: easeOut },
-      }}
       transition={
         shake
           ? { duration: 0.45, ease: "easeInOut" }
-          : { duration: 0.4, ease: easeOut }
+          : { duration: 0.28, ease: easeOut }
       }
       onMouseDown={(e) => e.preventDefault()}
     >
-      <div className={`osk-preview${shake ? " is-shake" : ""}`}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={fieldKey}
-            className="osk-preview-swap"
-            initial={{ opacity: 0, x: 36 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -28 }}
-            transition={{ duration: 0.32, ease: easeOut }}
-          >
-            <span className="osk-preview-label">{fieldLabel}</span>
-            <p className="osk-preview-value">
-              {value || (
-                <span className="osk-preview-empty">Start typing…</span>
-              )}
-              <span className="osk-caret" aria-hidden />
-            </p>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      {showPreview && (
+        <div className={`osk-preview${shake ? " is-shake" : ""}`}>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={fieldKey}
+              className="osk-preview-swap"
+              initial={{ opacity: 0, x: 36 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -28 }}
+              transition={{ duration: 0.32, ease: easeOut }}
+            >
+              <span className="osk-preview-label">{fieldLabel}</span>
+              <p className="osk-preview-value">
+                {value || (
+                  <span className="osk-preview-empty">Start typing…</span>
+                )}
+                <span className="osk-caret" aria-hidden />
+              </p>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
 
-      <div className="osk">
+      <div className={`osk${shake ? " is-shake" : ""}`}>
         <div className="osk-top">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

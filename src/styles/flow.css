@@ -32,8 +32,9 @@
   position: relative;
 }
 
-.flow-form-layout.is-typing .flow-panel {
-  display: none;
+.flow-form-layout--single {
+  justify-content: center;
+  padding: 0;
 }
 
 .flow-panel {
@@ -54,6 +55,16 @@
   -webkit-backdrop-filter: blur(8px);
 }
 
+.flow-panel--single {
+  width: min(1040px, 100%);
+  max-height: min(94%, 1780px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 24px 28px 26px;
+}
+
 .flow-result-banner {
   display: flex;
   flex-direction: column;
@@ -66,6 +77,40 @@
   border-radius: 18px;
   border: 1px solid rgba(255, 255, 255, 0.28);
   box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.flow-panel--single .flow-result-banner {
+  margin-bottom: 16px;
+  padding: 16px 22px;
+}
+
+.flow-panel--single .flow-result-value {
+  font-size: 42px;
+}
+
+.flow-panel--single .flow-form {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.flow-panel--single .flow-field-row {
+  flex-shrink: 0;
+}
+
+.flow-panel--single .osk-stage--inline {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  justify-content: center;
+}
+
+.flow-panel--single .flow-submit-wrap {
+  margin-top: 4px;
+  flex-shrink: 0;
 }
 
 .flow-result-banner.is-win {
@@ -309,6 +354,15 @@
   box-shadow: 0 16px 50px rgba(0, 0, 0, 0.5);
   user-select: none;
   -webkit-user-select: none;
+}
+
+.osk.is-shake {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.35);
+}
+
+.osk-stage--inline {
+  gap: 0;
 }
 
 .osk-top {
