@@ -62,9 +62,15 @@ export default function OnScreenKeyboard({
   const [symbols, setSymbols] = useState(false);
 
   useEffect(() => {
-    setShift(mode === "text");
     setSymbols(false);
   }, [mode, fieldKey]);
+
+  useEffect(() => {
+    if (mode !== "text" || symbols) return;
+    // Capitalize start of name and first letter after a space
+    const shouldCapitalize = value.length === 0 || /\s$/.test(value);
+    setShift(shouldCapitalize);
+  }, [mode, fieldKey, value, symbols]);
 
   const hint = useMemo(() => {
     if (mode === "tel") return "Number pad";
@@ -84,6 +90,14 @@ export default function OnScreenKeyboard({
     onKey(valueOut);
     if (mode === "text" && shift && !symbols) {
       setShift(false);
+    }
+  }
+
+  function handleSpace() {
+    if (disabled) return;
+    onSpace();
+    if (mode === "text" && !symbols) {
+      setShift(true);
     }
   }
 
@@ -296,7 +310,7 @@ export default function OnScreenKeyboard({
                     type="button"
                     className="osk-key osk-key-space"
                     disabled={disabled}
-                    onClick={onSpace}
+                    onClick={handleSpace}
                   >
                     Space
                   </button>

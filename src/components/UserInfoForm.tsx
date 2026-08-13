@@ -106,7 +106,16 @@ export default function UserInfoForm({
 
   function appendToActive(chunk: string) {
     if (submitting) return;
-    updateField(activeField, `${values[activeField]}${chunk}`);
+
+    let nextChunk = chunk;
+    if (activeField === "name" && /^[a-zA-Z]$/.test(chunk)) {
+      const current = values.name;
+      if (current.length === 0 || /\s$/.test(current)) {
+        nextChunk = chunk.toUpperCase();
+      }
+    }
+
+    updateField(activeField, `${values[activeField]}${nextChunk}`);
   }
 
   function backspaceActive() {
