@@ -95,6 +95,7 @@ export default function SpinWheel() {
   const spinSoundRef = useRef<HTMLAudioElement | null>(null);
   const winSoundRef = useRef<HTMLAudioElement | null>(null);
   const lossSoundRef = useRef<HTMLAudioElement | null>(null);
+  const tryAgainSoundRef = useRef<HTMLAudioElement | null>(null);
   const loopHandlerRef = useRef<(() => void) | null>(null);
 
   const overlayOpen = phase !== "game";
@@ -163,19 +164,20 @@ export default function SpinWheel() {
     void spinSound.play();
   }, [stopSpinSound]);
 
-  const playResultSound = useCallback((isWin: boolean) => {
-    if (isWin) {
-      const winSound = winSoundRef.current;
-      if (!winSound) return;
-      winSound.currentTime = 0;
-      void winSound.play();
-    } else {
-      const lossSound = lossSoundRef.current;
-      if (!lossSound) return;
-      lossSound.currentTime = 0;
-      void lossSound.play();
-    }
-  }, []);
+  const playResultSound = useCallback(
+    (kind: "win" | "loss" | "retry") => {
+      const sound =
+        kind === "win"
+          ? winSoundRef.current
+          : kind === "retry"
+            ? tryAgainSoundRef.current
+            : lossSoundRef.current;
+      if (!sound) return;
+      sound.currentTime = 0;
+      void sound.play();
+    },
+    [],
+  );
 
   const convertSlices = useCallback((prizeText: string) => {
     setPrizes((current) => {
@@ -282,7 +284,13 @@ export default function SpinWheel() {
     pendingPrizeRef.current = selectedPrize;
 
     stopSpinSound();
-    playResultSound(isWinPrize(selectedPrize));
+    playResultSound(
+      isTryAgainPrize(selectedPrize)
+        ? "retry"
+        : isWinPrize(selectedPrize)
+          ? "win"
+          : "loss",
+    );
 
     // Show result immediately — claim runs in the background
     const limit = PRIZE_LIMITS[selectedPrize as keyof typeof PRIZE_LIMITS];
@@ -385,6 +393,11 @@ export default function SpinWheel() {
       <audio ref={spinSoundRef} src="/sound/spine.wav" preload="auto" />
       <audio ref={winSoundRef} src="/sound/Win.mp3" preload="auto" />
       <audio ref={lossSoundRef} src="/sound/loss.wav" preload="auto" />
+      <audio
+        ref={tryAgainSoundRef}
+        src="/sound/try-again.wav"
+        preload="auto"
+      />
 
       <div
         className="wheel-scaler"
@@ -437,16 +450,26 @@ export default function SpinWheel() {
               >
                 {isTryAgainPrize(modalPrize) ? (
                   <>
-                    <div className="wheel-winchild wheel-winchild--retry">
+                    <motion.div
+                      className="wheel-winchild wheel-winchild--retry"
+                      initial={{ scale: 0.86, rotate: -4 }}
+                      animate={{ scale: 1, rotate: 0 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 280,
+                        damping: 16,
+                      }}
+                    >
+                      <div className="wheel-retry-glow" aria-hidden />
                       <div className="wheel-retry-copy">
-                        <span className="wheel-retry-label">Try Again</span>
-                        <h1>You&apos;re in luck!</h1>
+                        <span className="wheel-retry-label">Bonus spin</span>
+                        <h1>One more chance!</h1>
                         <p className="wheel-retry-message">
-                          You&apos;ve earned one more spin — give the wheel
-                          another go.
+                          The wheel is still yours — spin again and
+                          take another shot.
                         </p>
                       </div>
-                    </div>
+                    </motion.div>
                     <BrandButton
                       variant="default"
                       className="min-h-21 w-105 rounded-xl px-9 py-6! text-[42px]! font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.4)] border-4 border-[#DA291C]"
