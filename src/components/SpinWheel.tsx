@@ -8,6 +8,8 @@ import SuccessCelebration from "@/components/SuccessCelebration";
 import {
   BETTER_LUCK,
   DEFAULT_PRIZES,
+  isTryAgainPrize,
+  isWinPrize,
   PRIZE_CONFIG_VERSION,
   PRIZE_LIMITS,
   SLICE_DEG,
@@ -280,7 +282,7 @@ export default function SpinWheel() {
     pendingPrizeRef.current = selectedPrize;
 
     stopSpinSound();
-    playResultSound(selectedPrize !== BETTER_LUCK);
+    playResultSound(isWinPrize(selectedPrize));
 
     // Show result immediately — claim runs in the background
     const limit = PRIZE_LIMITS[selectedPrize as keyof typeof PRIZE_LIMITS];
@@ -328,6 +330,15 @@ export default function SpinWheel() {
     const prize = pendingPrizeRef.current ?? modalPrize;
     void ensureSessionReady(prize);
   }, [ensureSessionReady, modalPrize]);
+
+  const handleTryAgain = useCallback(() => {
+    sessionPromiseRef.current = null;
+    claimPromiseRef.current = null;
+    pendingPrizeRef.current = null;
+    setGameSessionId(null);
+    setSubmitError(null);
+    setPhase("game");
+  }, []);
 
   const handleParticipantSubmit = useCallback(
     async (data: ParticipantPayload) => {
@@ -402,7 +413,11 @@ export default function SpinWheel() {
           <AnimatePresence mode="wait">
             {phase === "reward" && (
               <motion.section
-                key="reward-popup"
+                key={
+                  isTryAgainPrize(modalPrize)
+                    ? "try-again-popup"
+                    : "reward-popup"
+                }
                 className="wheel-window"
                 id="window"
                 initial={{ opacity: 0, scale: 0.82, y: 20 }}
@@ -420,16 +435,40 @@ export default function SpinWheel() {
                   mass: 0.72,
                 }}
               >
-                <div className="wheel-winchild">
-                  <h1 dangerouslySetInnerHTML={{ __html: modalPrize }} />
-                </div>
-                <BrandButton
-                  variant="default"
-                  className="min-h-21 w-105 rounded-xl px-9 py-6! text-[42px]! font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.4)] border-4 border-[#DA291C]"
-                  onClick={handleOpenForm}
-                >
-                  New Game
-                </BrandButton>
+                {isTryAgainPrize(modalPrize) ? (
+                  <>
+                    <div className="wheel-winchild wheel-winchild--retry">
+                      <div className="wheel-retry-copy">
+                        <span className="wheel-retry-label">Try Again</span>
+                        <h1>You&apos;re in luck!</h1>
+                        <p className="wheel-retry-message">
+                          You&apos;ve earned one more spin — give the wheel
+                          another go.
+                        </p>
+                      </div>
+                    </div>
+                    <BrandButton
+                      variant="default"
+                      className="min-h-21 w-105 rounded-xl px-9 py-6! text-[42px]! font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.4)] border-4 border-[#DA291C]"
+                      onClick={handleTryAgain}
+                    >
+                      Try Again
+                    </BrandButton>
+                  </>
+                ) : (
+                  <>
+                    <div className="wheel-winchild">
+                      <h1 dangerouslySetInnerHTML={{ __html: modalPrize }} />
+                    </div>
+                    <BrandButton
+                      variant="default"
+                      className="min-h-21 w-105 rounded-xl px-9 py-6! text-[42px]! font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.4)] border-4 border-[#DA291C]"
+                      onClick={handleOpenForm}
+                    >
+                      New Game
+                    </BrandButton>
+                  </>
+                )}
               </motion.section>
             )}
 

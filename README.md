@@ -27,6 +27,5 @@ For production participant storage (Supabase PostgreSQL), see [docs/BACKEND.md](
 | Leather MAG Card Holder | 2 |
 | Phone Stand UGREEN | 2 |
 | Laptop Stand UGREEN | 2 |
-| A5 Agenda PU Leather | 2 |
 
-Remaining slices: Better Luck Next Time
+Remaining slices: Better Luck Next Time, Try Again

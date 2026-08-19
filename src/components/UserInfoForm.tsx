@@ -20,7 +20,7 @@ import {
   validateParticipantForm,
 } from "@/lib/flow";
 import type { ParticipantPayload } from "@/lib/participants";
-import { BETTER_LUCK } from "@/lib/prizes";
+import { isWinPrize } from "@/lib/prizes";
 
 type UserInfoFormProps = {
   prizeHtml: string;
@@ -60,7 +60,7 @@ export default function UserInfoForm({
   onSubmit,
 }: UserInfoFormProps) {
   const formId = useId();
-  const isWin = prizeHtml !== BETTER_LUCK;
+  const isWin = isWinPrize(prizeHtml);
 
   const [values, setValues] = useState<ParticipantFormValues>(
     EMPTY_PARTICIPANT_FORM,

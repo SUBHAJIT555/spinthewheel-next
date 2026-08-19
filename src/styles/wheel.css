@@ -316,6 +316,55 @@
   text-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
 }
 
+.wheel-winchild--retry {
+  background:
+    linear-gradient(
+      165deg,
+      rgba(0, 48, 135, 0.92) 0%,
+      rgba(12, 35, 64, 0.88) 100%
+    ),
+    url("/img/spinthewheel.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+.wheel-retry-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 20px;
+  padding: 48px 56px;
+  max-width: 680px;
+}
+
+.wheel-retry-label {
+  font-family: var(--medium), sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(180, 210, 255, 0.9);
+}
+
+.wheel-retry-copy h1 {
+  font-size: 72px;
+  line-height: 1.08;
+  padding: 0;
+  margin: 0;
+}
+
+.wheel-retry-message {
+  font-family: var(--medium), sans-serif;
+  font-size: 34px;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.88);
+  margin: 0;
+  max-width: 560px;
+}
+
 /* Dev-only: hidden automatically in production builds */
 .wheel-dev-reset {
   position: fixed;
