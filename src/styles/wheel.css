@@ -59,7 +59,7 @@
 }
 
 .wheel-home {
-  background: url("/img/background.png");
+  background: url("/img/background.webp");
   width: 100%;
   height: 100%;
   background-repeat: no-repeat;
@@ -76,7 +76,7 @@
 .wheel-disk {
   width: 1000px;
   height: 1000px;
-  background: url("/img/circle.png");
+  background: url("/img/circle.webp");
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -273,7 +273,7 @@
 .wheel-winchild {
   width: 820px;
   height: 820px;
-  background: url("/img/spinthewheel.png");
+  background: url("/img/spinthewheel.webp");
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
@@ -328,7 +328,7 @@
       rgba(0, 48, 135, 0.94) 0%,
       rgba(12, 28, 52, 0.92) 100%
     ),
-    url("/img/spinthewheel.png");
+    url("/img/spinthewheel.webp");
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
