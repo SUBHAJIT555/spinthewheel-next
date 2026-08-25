@@ -19,15 +19,16 @@ import {
   type ParticipantFormValues,
   validateParticipantForm,
 } from "@/lib/flow";
-import type { ParticipantPayload } from "@/lib/participants";
-import { isWinPrize } from "@/lib/prizes";
+
+export type ParticipantDraft = {
+  name: string;
+  contactNumber: string;
+};
 
 type UserInfoFormProps = {
-  prizeHtml: string;
-  gameSessionId: string | null;
-  submitting: boolean;
+  submitting?: boolean;
   submitError?: string | null;
-  onSubmit: (data: ParticipantPayload) => void | Promise<void>;
+  onContinue: (data: ParticipantDraft) => void | Promise<void>;
 };
 
 type FieldConfig = {
@@ -53,14 +54,11 @@ const FIELD_ORDER: FieldConfig[] = [
 ];
 
 export default function UserInfoForm({
-  prizeHtml,
-  gameSessionId,
-  submitting,
+  submitting = false,
   submitError = null,
-  onSubmit,
+  onContinue,
 }: UserInfoFormProps) {
   const formId = useId();
-  const isWin = isWinPrize(prizeHtml);
 
   const [values, setValues] = useState<ParticipantFormValues>(
     EMPTY_PARTICIPANT_FORM,
@@ -164,15 +162,9 @@ export default function UserInfoForm({
       return;
     }
 
-    if (!gameSessionId) {
-      triggerShake();
-      return;
-    }
-
-    await onSubmit({
+    await onContinue({
       name: values.name.trim(),
       contactNumber: values.contactNumber.trim(),
-      gameSessionId,
     });
   }
 
@@ -229,15 +221,12 @@ export default function UserInfoForm({
         }}
         transition={{ type: "spring", stiffness: 380, damping: 24, mass: 0.75 }}
       >
-        <div className={`flow-result-banner${isWin ? " is-win" : " is-loss"}`}>
-          <span className="flow-result-label">
-            {isWin ? "Your Reward" : "Spin Result"}
-          </span>
-          <p
-            className="flow-result-value"
-            dangerouslySetInnerHTML={{ __html: prizeHtml }}
-          />
-        </div>
+        <header className="flow-panel-header flow-panel-header--center">
+          <h2 className="flow-panel-title">Your Details</h2>
+          <p className="flow-panel-subtitle">
+            Enter your name and contact number to spin
+          </p>
+        </header>
 
         <form
           id={formId}
@@ -275,7 +264,7 @@ export default function UserInfoForm({
               disabled={submitting}
               className="flow-submit"
             >
-              {submitting ? "Submitting..." : "Submit"}
+              {submitting ? "Please wait..." : "Continue"}
             </BrandButton>
           </div>
         </form>

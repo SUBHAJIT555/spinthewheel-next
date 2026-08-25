@@ -152,6 +152,11 @@
   margin-bottom: 18px;
 }
 
+.flow-panel-header--center {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
 .flow-panel-title {
   font-family: var(--bold);
   font-size: 44px;

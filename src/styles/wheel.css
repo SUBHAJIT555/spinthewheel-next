@@ -442,3 +442,16 @@
   font-size: 18px;
   text-align: center;
 }
+
+.wheel-reward-error {
+  max-width: 720px;
+  margin: 0;
+  padding: 12px 20px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 107, 107, 0.55);
+  background: rgba(40, 8, 12, 0.9);
+  color: #ffb4b4;
+  font-family: var(--medium), sans-serif;
+  font-size: 24px;
+  text-align: center;
+}

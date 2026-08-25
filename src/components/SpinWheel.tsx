@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useAnimationControls, AnimatePresence } from "motion/react";
 import BrandButton from "@/components/BrandButton";
-import UserInfoForm from "@/components/UserInfoForm";
+import UserInfoForm, {
+  type ParticipantDraft,
+} from "@/components/UserInfoForm";
 import SuccessCelebration from "@/components/SuccessCelebration";
 import {
   BETTER_LUCK,
@@ -20,7 +22,6 @@ import {
   claimGameSessionPrize,
   createGameSession,
   submitParticipant,
-  type ParticipantPayload,
 } from "@/lib/participants";
 import "@/styles/wheel.css";
 import "@/styles/flow.css";
@@ -81,7 +82,10 @@ export default function SpinWheel() {
   const [scale, setScale] = useState(1);
   const [formSession, setFormSession] = useState(0);
   const [gameSessionId, setGameSessionId] = useState<string | null>(null);
+  const [participantDraft, setParticipantDraft] =
+    useState<ParticipantDraft | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [savingResult, setSavingResult] = useState(false);
 
   const totalRotation = useRef(0);
   const controls = useAnimationControls();
@@ -164,20 +168,17 @@ export default function SpinWheel() {
     void spinSound.play();
   }, [stopSpinSound]);
 
-  const playResultSound = useCallback(
-    (kind: "win" | "loss" | "retry") => {
-      const sound =
-        kind === "win"
-          ? winSoundRef.current
-          : kind === "retry"
-            ? tryAgainSoundRef.current
-            : lossSoundRef.current;
-      if (!sound) return;
-      sound.currentTime = 0;
-      void sound.play();
-    },
-    [],
-  );
+  const playResultSound = useCallback((kind: "win" | "loss" | "retry") => {
+    const sound =
+      kind === "win"
+        ? winSoundRef.current
+        : kind === "retry"
+          ? tryAgainSoundRef.current
+          : lossSoundRef.current;
+    if (!sound) return;
+    sound.currentTime = 0;
+    void sound.play();
+  }, []);
 
   const convertSlices = useCallback((prizeText: string) => {
     setPrizes((current) => {
@@ -187,7 +188,8 @@ export default function SpinWheel() {
     });
   }, []);
 
-  const returnToGame = useCallback(() => {
+  /** Back to the wheel for the next player. */
+  const returnToStart = useCallback(() => {
     if (successTimerRef.current) {
       clearTimeout(successTimerRef.current);
       successTimerRef.current = null;
@@ -195,56 +197,60 @@ export default function SpinWheel() {
     sessionPromiseRef.current = null;
     claimPromiseRef.current = null;
     pendingPrizeRef.current = null;
-    setPhase("game");
-    setModalPrize("CX Day<br />Surprise");
+    setParticipantDraft(null);
     setGameSessionId(null);
     setSubmitError(null);
+    setSavingResult(false);
+    setModalPrize("CX Day<br />Surprise");
     setFormSession((n) => n + 1);
     totalRotation.current = 0;
     void controls.set({ rotate: 0 });
+    setPhase("game");
   }, [controls]);
 
-  /** Wait for session + prize lock without blocking the spin UI. */
-  const ensureSessionReady = useCallback(async (prizeHtml: string) => {
-    if (claimPromiseRef.current) {
-      await claimPromiseRef.current;
-    }
-
-    let sessionId = gameSessionId;
-
-    if (!sessionId && sessionPromiseRef.current) {
-      const created = await sessionPromiseRef.current;
-      if (created.ok) {
-        sessionId = created.gameSessionId;
-        setGameSessionId(created.gameSessionId);
-      } else {
-        return { ok: false as const, message: created.message };
+  const ensureSessionReady = useCallback(
+    async (prizeHtml: string) => {
+      if (claimPromiseRef.current) {
+        await claimPromiseRef.current;
       }
-    }
 
-    if (!sessionId) {
-      return {
-        ok: false as const,
-        message: "Unable to save your information. Please try again.",
-      };
-    }
+      let sessionId = gameSessionId;
 
-    const claim = await claimGameSessionPrize(sessionId, prizeHtml);
-    if (!claim.ok) {
-      // Already locked from background claim is fine; submit will verify.
-      console.warn("[session] claim:", claim.message);
-    }
+      if (!sessionId && sessionPromiseRef.current) {
+        const created = await sessionPromiseRef.current;
+        if (created.ok) {
+          sessionId = created.gameSessionId;
+          setGameSessionId(created.gameSessionId);
+        } else {
+          return { ok: false as const, message: created.message };
+        }
+      }
 
-    return { ok: true as const, gameSessionId: sessionId };
-  }, [gameSessionId]);
+      if (!sessionId) {
+        return {
+          ok: false as const,
+          message: "Unable to save your information. Please try again.",
+        };
+      }
 
-  const handleSpin = useCallback(async () => {
-    if (spinning || phase !== "game") return;
+      const claim = await claimGameSessionPrize(sessionId, prizeHtml);
+      if (!claim.ok) {
+        console.warn("[session] claim:", claim.message);
+      }
+
+      return { ok: true as const, gameSessionId: sessionId };
+    },
+    [gameSessionId],
+  );
+
+  const runSpin = useCallback(async () => {
+    if (spinning) return;
     setSpinning(true);
     setSubmitError(null);
     setGameSessionId(null);
     pendingPrizeRef.current = null;
     claimPromiseRef.current = null;
+    setPhase("game");
 
     // Start session in parallel — do not block the wheel
     sessionPromiseRef.current = createGameSession().then((result) => {
@@ -292,7 +298,6 @@ export default function SpinWheel() {
           : "loss",
     );
 
-    // Show result immediately — claim runs in the background
     const limit = PRIZE_LIMITS[selectedPrize as keyof typeof PRIZE_LIMITS];
     if (limit) {
       const count = getWinCount(limit.key) + 1;
@@ -323,7 +328,6 @@ export default function SpinWheel() {
   }, [
     controls,
     convertSlices,
-    phase,
     playResultSound,
     playSoundLoop,
     prizes,
@@ -331,62 +335,86 @@ export default function SpinWheel() {
     stopSpinSound,
   ]);
 
-  const handleOpenForm = useCallback(() => {
-    setSubmitError(null);
-    setPhase("form");
-    // Finish claim in background while user starts typing
-    const prize = pendingPrizeRef.current ?? modalPrize;
-    void ensureSessionReady(prize);
-  }, [ensureSessionReady, modalPrize]);
+  /** SPIN: collect details first (if needed), then spin. */
+  const handleSpinClick = useCallback(() => {
+    if (spinning || phase !== "game") return;
+    if (!participantDraft) {
+      setSubmitError(null);
+      setPhase("form");
+      return;
+    }
+    void runSpin();
+  }, [participantDraft, phase, runSpin, spinning]);
 
+  const handleFormContinue = useCallback(
+    async (data: ParticipantDraft) => {
+      setSubmitError(null);
+      setParticipantDraft(data);
+      setPhase("game");
+      // Spin right after details are collected
+      void runSpin();
+    },
+    [runSpin],
+  );
+
+  /** Try Again: keep name/contact, allow another spin. */
   const handleTryAgain = useCallback(() => {
     sessionPromiseRef.current = null;
     claimPromiseRef.current = null;
     pendingPrizeRef.current = null;
     setGameSessionId(null);
     setSubmitError(null);
+    setSavingResult(false);
     setPhase("game");
   }, []);
 
-  const handleParticipantSubmit = useCallback(
-    async (data: ParticipantPayload) => {
-      setSubmitError(null);
-      setPhase("submitting");
+  /** Final result (win / better luck): save to Supabase, then success. */
+  const handleFinishReward = useCallback(async () => {
+    if (!participantDraft || savingResult) return;
 
-      const prize = pendingPrizeRef.current ?? modalPrize;
-      const ready = await ensureSessionReady(prize);
-      if (!ready.ok) {
-        setSubmitError(ready.message);
-        setPhase("form");
-        return;
-      }
+    setSavingResult(true);
+    setSubmitError(null);
 
-      const result = await submitParticipant({
-        ...data,
-        gameSessionId: ready.gameSessionId,
-      });
+    const prize = pendingPrizeRef.current ?? modalPrize;
+    const ready = await ensureSessionReady(prize);
+    if (!ready.ok) {
+      setSubmitError(ready.message);
+      setSavingResult(false);
+      return;
+    }
 
-      if (!result.ok) {
-        setSubmitError(result.message);
-        setPhase("form");
-        return;
-      }
+    const result = await submitParticipant({
+      name: participantDraft.name,
+      contactNumber: participantDraft.contactNumber,
+      gameSessionId: ready.gameSessionId,
+    });
 
-      setPhase("success");
-      successTimerRef.current = setTimeout(() => {
-        returnToGame();
-      }, SUCCESS_HOLD_MS);
-    },
-    [ensureSessionReady, modalPrize, returnToGame],
-  );
+    if (!result.ok) {
+      setSubmitError(result.message);
+      setSavingResult(false);
+      return;
+    }
+
+    setPhase("success");
+    setSavingResult(false);
+    successTimerRef.current = setTimeout(() => {
+      returnToStart();
+    }, SUCCESS_HOLD_MS);
+  }, [
+    ensureSessionReady,
+    modalPrize,
+    participantDraft,
+    returnToStart,
+    savingResult,
+  ]);
 
   const handleDevReset = useCallback(() => {
     if (spinning) return;
     stopSpinSound();
     resetPrizeStorage();
     setPrizes([...DEFAULT_PRIZES]);
-    returnToGame();
-  }, [returnToGame, spinning, stopSpinSound]);
+    returnToStart();
+  }, [returnToStart, spinning, stopSpinSound]);
 
   return (
     <div className="wheel-root">
@@ -424,6 +452,21 @@ export default function SpinWheel() {
           </AnimatePresence>
 
           <AnimatePresence mode="wait">
+            {phase === "form" && (
+              <motion.section
+                key={`user-form-${formSession}`}
+                className="flow-shell"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
+              >
+                <UserInfoForm
+                  submitError={submitError}
+                  onContinue={handleFormContinue}
+                />
+              </motion.section>
+            )}
+
             {phase === "reward" && (
               <motion.section
                 key={
@@ -465,8 +508,8 @@ export default function SpinWheel() {
                         <span className="wheel-retry-label">Bonus spin</span>
                         <h1>One more chance!</h1>
                         <p className="wheel-retry-message">
-                          The wheel is still yours — spin again and
-                          take another shot.
+                          The wheel is still yours — spin again and take another
+                          shot.
                         </p>
                       </div>
                     </motion.div>
@@ -483,33 +526,21 @@ export default function SpinWheel() {
                     <div className="wheel-winchild">
                       <h1 dangerouslySetInnerHTML={{ __html: modalPrize }} />
                     </div>
+                    {submitError && (
+                      <p className="wheel-reward-error" role="alert">
+                        {submitError}
+                      </p>
+                    )}
                     <BrandButton
                       variant="default"
                       className="min-h-21 w-105 rounded-xl px-9 py-6! text-[42px]! font-semibold shadow-[0_10px_28px_rgba(0,0,0,0.4)] border-4 border-[#DA291C]"
-                      onClick={handleOpenForm}
+                      disabled={savingResult}
+                      onClick={handleFinishReward}
                     >
-                      New Game
+                      {savingResult ? "Saving..." : "Continue"}
                     </BrandButton>
                   </>
                 )}
-              </motion.section>
-            )}
-
-            {(phase === "form" || phase === "submitting") && (
-              <motion.section
-                key={`user-form-${formSession}`}
-                className="flow-shell"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.2 } }}
-              >
-                <UserInfoForm
-                  prizeHtml={modalPrize}
-                  gameSessionId={gameSessionId}
-                  submitting={phase === "submitting"}
-                  submitError={submitError}
-                  onSubmit={handleParticipantSubmit}
-                />
               </motion.section>
             )}
 
@@ -548,7 +579,7 @@ export default function SpinWheel() {
                   id="spin"
                   type="button"
                   disabled={spinning || phase !== "game"}
-                  onClick={handleSpin}
+                  onClick={handleSpinClick}
                 >
                   SPIN
                 </button>
