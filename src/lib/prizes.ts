@@ -22,10 +22,10 @@ export function isTryAgainPrize(prizeHtml: string): boolean {
 
 /** Max 2 each — for testing stock conversion */
 export const PRIZE_LIMITS = {
-  "Water<br>Bottle": { key: "WB", max: 200 },
-  "Leather MAG<br>Card Holder": { key: "LMCH", max: 200 },
-  "Phone Stand<br>UGREEN": { key: "PSU", max: 200 },
-  "Laptop Stand<br>UGREEN": { key: "LSU", max: 200 },
+  "Water<br>Bottle": { key: "WB", max: 2 },
+  "Leather MAG<br>Card Holder": { key: "LMCH", max: 2 },
+  "Phone Stand<br>UGREEN": { key: "PSU", max: 2 },
+  "Laptop Stand<br>UGREEN": { key: "LSU", max: 2 },
 } as const;
 
 export type PrizeText = string;
