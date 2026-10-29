@@ -16,6 +16,7 @@ import {
   PRIZE_LIMITS,
   SLICE_DEG,
   SPIN_DURATION_MS,
+  wheelLabelFor,
 } from "@/lib/prizes";
 import type { FlowPhase } from "@/lib/flow";
 import {
@@ -639,7 +640,11 @@ export default function SpinWheel() {
                 <div className="wheel-mainwheel">
                   {(hydrated ? prizes : [...DEFAULT_PRIZES]).map((prize, i) => (
                     <div className="wheel-price" key={`${i}-${prize}`}>
-                      <h1 dangerouslySetInnerHTML={{ __html: prize }} />
+                            <h1
+                              dangerouslySetInnerHTML={{
+                                __html: wheelLabelFor(prize),
+                              }}
+                            />
                     </div>
                   ))}
                 </div>

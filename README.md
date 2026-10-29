@@ -23,8 +23,8 @@ For production participant storage (Supabase PostgreSQL), see [docs/BACKEND.md](
 
 | Prize | Max wins |
 |-------|----------|
-| Magnetic phone holder bottle | 33 |
-| Leather magnetic card holder | 33 |
-| Green Lion M4 phone & tablet holder | 34 |
+| Water Bottle with Magnetic Phone Holder | 33 |
+| Leather Magnetic Card Holder | 34 |
+| Phone & Tablet Stand | 34 |
 
 Remaining slices: Better Luck Next Time (3), Try Again (2)

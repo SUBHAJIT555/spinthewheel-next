@@ -11,7 +11,17 @@ export function normalizePrizeLabel(prizeHtml: string): string {
 
 /** Allowed prizes the client may assign to a session (includes Better Luck). */
 export const ALLOWED_PRIZE_LABELS: readonly string[] = Array.from(
-  new Set(DEFAULT_PRIZES.map((p) => normalizePrizeLabel(p))),
+  new Set([
+    ...DEFAULT_PRIZES.map((p) => normalizePrizeLabel(p)),
+    // Previous wheel labels — so an in-progress spin can still be saved
+    "Magnetic Phone Holder",
+    "Leather MAG Card Holder",
+    "Green Lion M4 Holder",
+    "Green Lion M4 Phone & Tablet Holder",
+    "Magnetic Phone Holder Bottle",
+    "Leather Magnetic Card Holder",
+    "Water Bottle Phone Holder",
+  ]),
 );
 
 export const BETTER_LUCK_LABEL = normalizePrizeLabel(BETTER_LUCK);

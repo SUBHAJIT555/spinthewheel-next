@@ -133,14 +133,13 @@
 
 .wheel-price h1 {
   transform: rotate(90deg);
-  font-size: 28px;
+  font-size: 24px;
   margin-bottom: 110px;
   line-height: 1.12;
   font-weight: 700;
-  max-width: 200px;
-  width: 200px;
-  overflow-wrap: break-word;
-  hyphens: auto;
+  max-width: 210px;
+  width: 210px;
+  overflow-wrap: anywhere;
 }
 
 /* Dark slices — pms 289 (#0C2340) + pms 5405 (#4F758B) */
