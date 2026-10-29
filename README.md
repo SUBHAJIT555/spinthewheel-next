@@ -19,13 +19,12 @@ For production participant storage (Supabase PostgreSQL), see [docs/BACKEND.md](
 - **Result modal** — prize reveal → details form (Name + UAE contact) → success
 - **Backend** — game sessions lock the prize server-side; `POST /api/participants` never trusts client prize
 
-## Prize inventory (max 2 each for testing)
+## Prize inventory
 
 | Prize | Max wins |
 |-------|----------|
-| Water Bottle | 2 |
-| Leather MAG Card Holder | 2 |
-| Phone Stand UGREEN | 2 |
-| Laptop Stand UGREEN | 2 |
+| Magnetic phone holder bottle | 33 |
+| Leather magnetic card holder | 33 |
+| Green Lion M4 phone & tablet holder | 34 |
 
-Remaining slices: Better Luck Next Time, Try Again
+Remaining slices: Better Luck Next Time (3), Try Again (2)
