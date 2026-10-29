@@ -34,8 +34,21 @@ const PRIZE_VERSION_KEY = "prizeConfigVersion";
 const DESIGN_W = 1080;
 const DESIGN_H = 1920;
 const SUCCESS_HOLD_MS = 2400;
+const RESET_PIN = "2580";
+const RESET_TAP_COUNT = 7;
+const RESET_TAP_WINDOW_MS = 4000;
 
-const LEGACY_COUNT_KEYS = ["CWM", "YPA", "HS", "GCS", "AED", "MB"];
+const LEGACY_COUNT_KEYS = [
+  "CWM",
+  "YPA",
+  "HS",
+  "GCS",
+  "AED",
+  "MB",
+  "WB",
+  "PSU",
+  "LSU",
+];
 
 function resetPrizeStorage() {
   localStorage.setItem(PRIZE_STORAGE_KEY, JSON.stringify([...DEFAULT_PRIZES]));
@@ -89,6 +102,9 @@ export default function SpinWheel() {
     useState<ParticipantDraft | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [savingResult, setSavingResult] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetPin, setResetPin] = useState("");
+  const [resetPinError, setResetPinError] = useState(false);
 
   const totalRotation = useRef(0);
   const controls = useAnimationControls();
@@ -104,6 +120,10 @@ export default function SpinWheel() {
   const lossSoundRef = useRef<HTMLAudioElement | null>(null);
   const tryAgainSoundRef = useRef<HTMLAudioElement | null>(null);
   const loopHandlerRef = useRef<(() => void) | null>(null);
+  const resetTapsRef = useRef<{ count: number; startedAt: number }>({
+    count: 0,
+    startedAt: 0,
+  });
 
   const overlayOpen = phase !== "game";
 
@@ -411,13 +431,54 @@ export default function SpinWheel() {
     savingResult,
   ]);
 
-  const handleDevReset = useCallback(() => {
+  const closeResetDialog = useCallback(() => {
+    setShowResetConfirm(false);
+    setResetPin("");
+    setResetPinError(false);
+  }, []);
+
+  const applyReset = useCallback(() => {
     if (spinning) return;
     stopSpinSound();
     resetPrizeStorage();
     setPrizes([...DEFAULT_PRIZES]);
+    closeResetDialog();
     returnToStart();
-  }, [returnToStart, spinning, stopSpinSound]);
+  }, [closeResetDialog, returnToStart, spinning, stopSpinSound]);
+
+  const handleResetAll = useCallback(() => {
+    if (resetPin !== RESET_PIN) {
+      setResetPinError(true);
+      setResetPin("");
+      return;
+    }
+    applyReset();
+  }, [applyReset, resetPin]);
+
+  const handleTitleResetTap = useCallback(() => {
+    if (spinning || phase !== "game" || showResetConfirm) return;
+    const now = Date.now();
+    const taps = resetTapsRef.current;
+    if (now - taps.startedAt > RESET_TAP_WINDOW_MS) {
+      taps.count = 0;
+      taps.startedAt = now;
+    }
+    taps.count += 1;
+    if (taps.count >= RESET_TAP_COUNT) {
+      taps.count = 0;
+      taps.startedAt = 0;
+      setResetPin("");
+      setResetPinError(false);
+      setShowResetConfirm(true);
+    }
+  }, [phase, showResetConfirm, spinning]);
+
+  const handleResetPinKey = useCallback((digit: string) => {
+    setResetPinError(false);
+    setResetPin((current) =>
+      current.length >= 4 ? current : `${current}${digit}`,
+    );
+  }, []);
 
   return (
     <div className="wheel-root">
@@ -562,6 +623,12 @@ export default function SpinWheel() {
 
           <section className="wheel-main">
             <section className="wheel-home">
+              <button
+                type="button"
+                className="wheel-title-hotspot"
+                aria-label="Spin to Win"
+                onClick={handleTitleResetTap}
+              />
               <div className="wheel-arrow" />
               <motion.div
                 className="wheel-disk"
@@ -592,11 +659,74 @@ export default function SpinWheel() {
         </div>
       </div>
 
+      {showResetConfirm && (
+        <div className="wheel-reset-mask" role="dialog" aria-modal="true">
+          <div className="wheel-reset-card">
+            <h2>Staff reset</h2>
+            <p>
+              Enter the staff PIN to clear prize counts on this screen. Saved
+              participants in Supabase are not deleted.
+            </p>
+            <p className="wheel-reset-pin" aria-hidden>
+              {resetPin.padEnd(4, "•")}
+            </p>
+            {resetPinError && (
+              <p className="wheel-reset-error" role="alert">
+                Incorrect PIN
+              </p>
+            )}
+            <div className="wheel-reset-pad">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9", "C", "0", "⌫"].map(
+                (key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className="wheel-reset-key"
+                    onClick={() => {
+                      if (key === "C") {
+                        setResetPin("");
+                        setResetPinError(false);
+                        return;
+                      }
+                      if (key === "⌫") {
+                        setResetPinError(false);
+                        setResetPin((current) => current.slice(0, -1));
+                        return;
+                      }
+                      handleResetPinKey(key);
+                    }}
+                  >
+                    {key}
+                  </button>
+                ),
+              )}
+            </div>
+            <div className="wheel-reset-actions">
+              <button
+                type="button"
+                className="wheel-reset-cancel"
+                onClick={closeResetDialog}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="wheel-reset-confirm"
+                onClick={handleResetAll}
+                disabled={spinning || resetPin.length !== 4}
+              >
+                Reset all
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {process.env.NODE_ENV !== "production" && (
         <button
           type="button"
           className="wheel-dev-reset"
-          onClick={handleDevReset}
+          onClick={applyReset}
           disabled={spinning}
         >
           Reset

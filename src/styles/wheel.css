@@ -73,6 +73,21 @@
   position: relative;
 }
 
+.wheel-title-hotspot {
+  position: absolute;
+  top: 268px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 760px;
+  height: 180px;
+  z-index: 2100;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .wheel-disk {
   width: 1000px;
   height: 1000px;
@@ -426,6 +441,104 @@
 
 .wheel-dev-reset:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.wheel-reset-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 5100;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(4, 10, 24, 0.72);
+}
+
+.wheel-reset-card {
+  width: min(520px, 92vw);
+  padding: 28px 26px 22px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(8, 18, 40, 0.96);
+  color: #fff;
+  font-family: var(--medium), sans-serif;
+}
+
+.wheel-reset-card h2 {
+  font-family: var(--bold);
+  font-size: 32px;
+  margin: 0 0 10px;
+}
+
+.wheel-reset-card p {
+  margin: 0 0 18px;
+  font-size: 20px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.wheel-reset-pin {
+  margin: 0 0 10px;
+  font-family: var(--bold);
+  font-size: 36px;
+  letter-spacing: 0.35em;
+  text-align: center;
+}
+
+.wheel-reset-error {
+  margin: 0 0 10px;
+  color: #ff8f8f;
+  text-align: center;
+  font-size: 18px;
+}
+
+.wheel-reset-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.wheel-reset-key {
+  min-height: 64px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-family: var(--bold);
+  font-size: 26px;
+  cursor: pointer;
+}
+
+.wheel-reset-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.wheel-reset-cancel,
+.wheel-reset-confirm {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-family: var(--medium), sans-serif;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.wheel-reset-cancel {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: #fff;
+}
+
+.wheel-reset-confirm {
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(208, 0, 0, 0.85);
+  color: #fff;
+}
+
+.wheel-reset-confirm:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
