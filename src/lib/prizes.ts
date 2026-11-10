@@ -39,9 +39,9 @@ export function isTryAgainPrize(prizeHtml: string): boolean {
 }
 
 export const PRIZE_LIMITS = {
-  [MAGNETIC_PHONE_HOLDER]: { key: "MPHB", max: 33 },
-  [LEATHER_CARD_HOLDER]: { key: "LMCH", max: 33 },
-  [PHONE_TABLET_STAND]: { key: "PTS", max: 34 },
+  [MAGNETIC_PHONE_HOLDER]: { key: "MPHB", max: 28 },
+  [LEATHER_CARD_HOLDER]: { key: "LMCH", max: 27 },
+  [PHONE_TABLET_STAND]: { key: "PTS", max: 25 },
 } as const;
 
 export type PrizeText = string;
